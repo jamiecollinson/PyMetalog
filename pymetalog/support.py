@@ -15,7 +15,6 @@ def MLprobs(x_old, step_len):
             else:
                 x.loc[i, 'probs'] = x.loc[i-1, 'probs'] + 1/l
 
-
     if len(x.index) > 100:
         y2 = np.linspace(step_len, 1 - step_len, ((1 - step_len) / step_len))
 
@@ -47,7 +46,6 @@ def pdfMetalog(a, y, t, bounds = [], boundedness = 'u'):
 
     # For the first three terms
     x = a[1]/d
-
     if a[2] != 0:
         x = x + a[2] * ((f / d) + l)
 
@@ -90,8 +88,6 @@ def pdfMetalog(a, y, t, bounds = [], boundedness = 'u'):
 
     return x
 
-
-
 def quantileMetalog(a, y, t, bounds = [], boundedness = 'u'):
     # Some values for calculation
     f = y - 0.5
@@ -114,7 +110,6 @@ def quantileMetalog(a, y, t, bounds = [], boundedness = 'u'):
             if (i % 2) == 0:
                 x = x + a[i-1] * f ** e * l
                 e = e + 1
-
             if (i % 2) != 0:
                 x = x + a[i-1] * f ** o
                 o = o + 1
@@ -129,7 +124,6 @@ def quantileMetalog(a, y, t, bounds = [], boundedness = 'u'):
         x = (bounds[0] + bounds[1] * np.exp(x)) / (1 + np.exp(x))
 
     return x
-
 
 def diffMatMetalog(term_limit, step_len):
     y = np.arange(step_len, 1, step_len)
@@ -177,7 +171,6 @@ def diffMatMetalog(term_limit, step_len):
         else:
             Diff = np.vstack((Diff, diffVector))
 
-
     Diff_neg = -1*(Diff)
     new_Diff = np.hstack((Diff[:,[0]], Diff_neg[:,[0]]))
 
@@ -187,11 +180,10 @@ def diffMatMetalog(term_limit, step_len):
 
     new_Diff = pd.DataFrame(data=new_Diff)
 
-
     return new_Diff
 
 def newtons_method_metalog(m,q,term):
-  #a simple newtons method application
+  # a simple newtons method application
   m = m.output_list
   alpha_step = 0.01
   err = 0.0000001
@@ -206,6 +198,7 @@ def newtons_method_metalog(m,q,term):
     derv_function = pdfMetalog(a,y_now,term,m['params']['bounds'],m['params']['boundedness'])
     y_next = y_now-alpha_step*(frist_function*derv_function)
     temp_err = abs((y_next-y_now))
+
     if y_next > 1:
       y_next = 0.99999
 
@@ -254,14 +247,10 @@ def pdfMetalog_density(m,t,y):
         x = x + ((o + 1) * a[i-1] * f**o)
         o = o + 1
 
-
       if (i % 2) == 0:
         # iff even
         x = x + a[i-1] * (((f**(e + 1)) / d) + (e + 1) * (f**e) * l)
         e = e + 1
-
-
-
 
   # Some change of variables here for boundedness
 

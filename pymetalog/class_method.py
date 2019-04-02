@@ -1,12 +1,8 @@
-import scipy as sp
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from .support import newtons_method_metalog, pdfMetalog_density
-import types
-
-#TODO have to add summary function
 
 def summary(m):
   print(' -----------------------------------------------\n',
@@ -25,31 +21,27 @@ def summary(m):
 
 def rmetalog(m, n = 1, term = 2, generator = 'rand'):
   m = m.output_list
-  # Input validation
   valid_terms = np.asarray(m['Validation']['term'])
   valid_terms_printout = " ".join(str(t) for t in valid_terms)
+
   if (type(n) != int) or (n < 1) or ((n % 1) != 0):
     raise TypeError('Error: n must be a positive numeric interger')
-
   if (type(term) != int) or (term < 2) or ((term % 1) != 0) or not (term in valid_terms):
     raise TypeError('Error: term must be a single positive numeric interger contained '
                     'in the metalog object. Available terms are: '+valid_terms_printout)
 
-
   if generator == 'hdr':
     x_arr = np.arange(1, n + 1)
     v_index = np.random.randint(80000)
-
     def hdrgen(pm_index):
       return (np.mod(((np.mod((v_index + 1000000) ^ 2 + (v_index + 1000000) * (pm_index + 10000000), 99999989)) +
                       1000007) * ((np.mod((pm_index + 10000000) ^ 2 + (pm_index + 10000000) *
                                           (np.mod((v_index + 1000000) ^ 2 + (v_index + 1000000) *
                                                   (pm_index + 10000000), 99999989)), 99999989)) + 1000013),
                      2147483647) + 0.5) / 2147483647
-
     vhdrgen = np.vectorize(hdrgen)
-
     x = vhdrgen(x_arr)
+
   else:
     x = np.random.rand(n)
 
@@ -57,10 +49,8 @@ def rmetalog(m, n = 1, term = 2, generator = 'rand'):
 
   # Construct initial Y Matrix values
   Y['y2'] = np.log(x / (1 - x))
-
   if (term > 2):
     Y['y3'] = (x - 0.5) * Y['y2']
-
   if (term > 3):
     Y['y4'] = x - 0.5
 
@@ -71,13 +61,9 @@ def rmetalog(m, n = 1, term = 2, generator = 'rand'):
       y = "".join(['y', str(i)])
       if (i % 2 != 0):
         Y[y] = Y['y4'] ** (i // 2)
-
       if (i % 2 == 0):
         z = "".join(['y', str(i-1)])
         Y[y] = Y['y2'] * Y[z]
-
-
-
 
   amat = "".join(['a', str(term)])
   a = m['A'][amat].iloc[0:(term)].to_frame()
@@ -91,7 +77,6 @@ def rmetalog(m, n = 1, term = 2, generator = 'rand'):
 
   if (m['params']['boundedness'] == 'b'):
     s = (m['params']['bounds'][0] + (m['params']['bounds'][1]) * np.exp(s)) / (1 + np.exp(s))
-
 
   return(s)
 
@@ -113,10 +98,8 @@ def pmetalog(m, q, term = 3):
 
   if type(q) != list:
     raise TypeError('Error: q must be a list of numeric values')
-
   if not isinstance(q, (int, float, complex)) and not all(isinstance(x, (int, float, complex)) for x in q):
     raise TypeError('Error: all elements in q must be numeric')
-
   if (term in valid_terms) != True or type(term) != int:
     raise TypeError('Error: term must be a single positive numeric interger contained in the metalog object. Available '
                     'terms are: '+' '.join(map(str, valid_terms)))
@@ -127,21 +110,15 @@ def pmetalog(m, q, term = 3):
 
 
 def qmetalog(m, y, term = 3):
-  # Input validation
-
   m = m.output_list
   valid_terms = np.asarray(m['Validation']['term'])
   valid_terms_printout = " ".join(str(t) for t in valid_terms)
 
   if type(y) != list:
     raise TypeError('Error: y must be a list of numeric values')
-
   y = np.asarray(y)
   if (all(isinstance(x, (int, float, complex)) for x in y)) != True or (max(y) >= 1) or (min(y) <= 0):
     raise TypeError('Error: y or all elements in y must be positive numeric values between 0 and 1')
-
-  if (type(term) != int) or (term < 2) or ((term % 1) != 0) or (term in valid_terms) != True:
-    print('smoo')
   if (type(term) != int) or (term < 2) or ((term % 1) != 0) or (term in valid_terms) != True:
     raise TypeError('Error: term must be a single positive numeric integer contained '
                     'in the metalog object. Available terms are: ' + valid_terms_printout)
@@ -150,10 +127,8 @@ def qmetalog(m, y, term = 3):
 
   # Construct the Y Matrix initial values
   Y['y2'] = np.log(y / (1 - y))
-
   if (term > 2):
     Y['y3'] = (y - 0.5) * Y['y2']
-
   if (term > 3):
     Y['y4'] = y - 0.5
 
@@ -164,7 +139,6 @@ def qmetalog(m, y, term = 3):
       y = "".join(['y', str(i)])
       if (i % 2 != 0):
         Y[y] = Y['y4'] ** (i // 2)
-
       if (i % 2 == 0):
         z = "".join(['y', str(i-1)])
         Y[y] = Y['y2'] * Y[z]
@@ -246,9 +220,6 @@ def plot(x):
 
   plt.yscale('linear')
   plt.tight_layout(rect=[0.05, 0.05, 1, 1])
-
-
-
 
   #Quantile Plot
   ymin = np.min(InitalResults['cumValue'])

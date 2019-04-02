@@ -4,8 +4,6 @@ from scipy.optimize import linprog
 from .pdf_quantile_functions import pdf_quantile_builder
 from .support import diffMatMetalog
 
-import cvxopt
-
 def a_vector_OLS_and_LP(m_list,
            term_limit,
            term_lower_bound,
@@ -14,6 +12,7 @@ def a_vector_OLS_and_LP(m_list,
            fit_method,
            diff_error = .001,
            diff_step = 0.001):
+
     # Some place holder values
     A = pd.DataFrame()
     c_a_names = []
@@ -34,8 +33,6 @@ def a_vector_OLS_and_LP(m_list,
         c_m_names = np.append(c_m_names, [m_name, M_name])
         c_a_names = np.append(c_a_names, a_name)
 
-
-
         try:
             temp = np.dot(np.dot(np.linalg.inv(np.dot(Y.T, Y)), Y.T), z)
         except:
@@ -47,13 +44,9 @@ def a_vector_OLS_and_LP(m_list,
         # build a y vector for smaller data sets
         if len(z) < 100:
             y2 = np.linspace(step_len, 1 - step_len, ((1 - step_len) / step_len))
-
             tailstep = step_len / 10
-
             y1 = np.linspace(tailstep, (min(y2) - tailstep), ((min(y2) - tailstep) / tailstep))
-
             y3 = np.linspace((max(y2) + tailstep), (max(y2) + tailstep * 9), ((tailstep * 9) / tailstep))
-
             y = np.hstack((y1, y2, y3))
 
         # Get the list and quantile values back for validation
@@ -68,11 +61,9 @@ def a_vector_OLS_and_LP(m_list,
             # Get the list and quantile values back for validation
             tempList = pdf_quantile_builder(temp, y=y, term_limit=i, bounds=bounds, boundedness=boundedness)
 
-
         if len(Mh) != 0:
             Mh = pd.concat([Mh, pd.DataFrame(tempList['m'])], axis=1)
             Mh = pd.concat([Mh, pd.DataFrame(tempList['M'])], axis=1)
-
 
         if len(Mh) == 0:
             Mh = pd.DataFrame(tempList['m'])
@@ -97,10 +88,7 @@ def a_vector_OLS_and_LP(m_list,
 
     return m_list
 
-
-
 def a_vector_LP(m_list, term_limit, term_lower_bound, diff_error = .001, diff_step = 0.001):
-    #A = pd.DataFrame()
     cnames = np.array([])
 
     for i in range(term_lower_bound, term_limit + 1):
@@ -112,11 +100,9 @@ def a_vector_LP(m_list, term_limit, term_lower_bound, diff_error = .001, diff_st
 
         new_Y = pd.DataFrame({'y1': Y.iloc[:, 0], 'y1_neg': Y_neg.iloc[:, 0]})
 
-
         for c in range(1,len(Y.iloc[0,:])):
             new_Y['y'+str(c+1)] = Y.iloc[:,c]
             new_Y['y' + str(c+1)+'_neg'] = Y_neg.iloc[:, c]
-
 
         a = np.array([''.join(['a', str(i)])])
         cnames = np.append(cnames, a, axis=0)
@@ -131,7 +117,6 @@ def a_vector_LP(m_list, term_limit, term_lower_bound, diff_error = .001, diff_st
             if j == 1:
                 error_vars = np.append(ones, trail_zeroes)
 
-
             elif j != 1:
                 error_vars = np.append(front_zeros, ones)
                 error_vars = np.append(error_vars, trail_zeroes)
@@ -140,7 +125,6 @@ def a_vector_LP(m_list, term_limit, term_lower_bound, diff_error = .001, diff_st
                 error_mat = np.append(error_mat, error_vars, axis=0)
             else:
                 error_mat = np.vstack((error_mat, error_vars))
-
 
         new = pd.concat((pd.DataFrame(data=error_mat), new_Y), axis=1)
         diff_mat = diffMatMetalog(i, diff_step)
@@ -156,24 +140,19 @@ def a_vector_LP(m_list, term_limit, term_lower_bound, diff_error = .001, diff_st
 
         diff_mat = np.concatenate((diff_zeros, diff_mat), axis=1)
 
-
         # Combine the total constraint matrix
         lp_mat = np.concatenate((new, diff_mat), axis=0)
-
 
         # Objective function coeficients
         c = np.append(np.repeat(1,(2 * len(Y.iloc[:, 1]))), np.repeat(0, (2*i)))
 
-        # Constraint matrix
-
+        # Constraint matrices
         A_eq = lp_mat[:len(Y.iloc[:, 1]),:]
         A_ub = -1*lp_mat[len(Y.iloc[:, 1]):,:]
-
         b_eq = z
         b_ub = -1*np.repeat(diff_error, len(diff_mat[:,0]))
 
-        # Solving the linear program SCIPY
-
+        # Solving the linear program w/ scipy (for now)
         lp_sol = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, method='simplex', options={"maxiter":5000, "tol":1.0e-5,"disp": False})
 
         # Consolidating solution back into the a vector

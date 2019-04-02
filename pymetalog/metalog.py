@@ -1,9 +1,7 @@
-#stuff
 import numpy as np
 import pandas as pd
 from .support import MLprobs
 from .a_vector import a_vector_OLS_and_LP
-from .class_method import rmetalog, plot
 
 class metalog():
     def __init__(self, x, bounds=[0,1], boundedness='u', term_limit=13, term_lower_bound=2, step_len=.01, probs=None, fit_method='any'):
@@ -26,15 +24,13 @@ class metalog():
 
         output_list = {}
 
-        #build z vector based on boundedness
-
+        # build z vector based on boundedness
         df_x = self.append_zvector(df_x)
 
         output_list['params'] = self.get_params()
         output_list['dataValues'] = df_x
 
         # Construct the Y Matrix initial values
-
         Y = pd.DataFrame()
         Y['y1'] = np.repeat([1], len(df_x['x']))
         Y['y2'] = np.log(df_x['probs'] / (1 - df_x['probs']))
@@ -44,7 +40,6 @@ class metalog():
             Y['y4'] = df_x['probs'] - 0.5
 
          # Complete the values through the term limit
-
         if (term_limit > 4):
             for i in range(5, self.term_limit+1):
                 yn = 'y'+str(i)
@@ -69,7 +64,7 @@ class metalog():
             diff_step = 0.001)
 
 
-    #input validation...
+    # input validation...
     @property
     def x(self):
         return self._x
@@ -82,10 +77,6 @@ class metalog():
             raise TypeError('Input x must be an array of allowable types: int, float, numpy.int64, or numpy.float64')
         if np.size(xs) < 3:
             raise IndexError('Input x must be of length 3 or greater')
-        # raise exception for input validation
-        # x must be of what type?
-        # must be of length three or greater
-
         self._x = xs
 
     @property
@@ -94,39 +85,26 @@ class metalog():
 
     @bounds.setter
     def bounds(self, bs):
-        #raise exception for input validation
-        # bounds must be of what type?
-        # bounds must be of exactly length two if boundedness = 'b', exactly 1 if boundedness = 'sl' or 'su'
         if type(bs) != list:
             raise TypeError('bounds parameter must be of type list')
-
         if not all(isinstance(x, (int)) for x in bs):
             raise TypeError('bounds parameter must be list of integers')
-
         if (self.boundedness == 'sl' or self.boundedness == 'su') and len(bs) != 1:
             raise IndexError('Must supply only one bound for semi-lower or semi-upper boundedness')
-
         if self.boundedness == 'b' and len(bs) != 2:
             raise IndexError('Must supply exactly two bounds for bounded boundedness (i.e. [0,30])')
-
         if self.boundedness == 'su':
             bs_o = [np.min(self.x), bs[0]]
-
         if self.boundedness == 'sl':
             bs_o = [bs[0], np.max(self.x)]
-
         if self.boundedness == 'b' or self.boundedness == 'u':
             bs_o = bs
-
         if self.boundedness == 'sl' and np.min(self.x) < bs_o[0]:
             raise ValueError('for semi-lower boundedness the lower bound must be less than the smallest value in x')
-
         if self.boundedness == 'su' and np.max(self.x) > bs_o[1]:
             raise ValueError('for semi-upper boundedness the upper bound must be greater than the largest value in x')
-
         if bs_o[0] > bs_o[1] and self.boundedness == 'b':
             raise ValueError('Upper bound must be greater than lower bound')
-
         self._bounds = bs_o
 
     @property
@@ -135,10 +113,8 @@ class metalog():
 
     @boundedness.setter
     def boundedness(self, bns):
-        #raise exception for input validation
         if bns != 'u' and bns != 'b' and bns != 'su' and bns != 'sl':
             raise ValueError('boundedness parameter must be u, su, sl or b only')
-
         self._boundedness = bns
 
     @property
@@ -147,14 +123,12 @@ class metalog():
 
     @term_limit.setter
     def term_limit(self, tl):
-        #raise exception for input validation
         if type(tl) != int:
             raise TypeError('term_limit parameter should be an integer between 3 and 30')
         if tl > 30 or tl < 3:
             raise ValueError('term_limit parameter should be an integer between 3 and 30')
         if tl > len(self.x):
             raise ValueError('term_limit must be less than or equal to the length of the vector x')
-
         self._term_limit = tl
 
     @property
@@ -163,14 +137,12 @@ class metalog():
 
     @term_lower_bound.setter
     def term_lower_bound(self, tlb):
-        #raise exception for input validation
         if type(tlb) != int:
             raise TypeError('term_lower_bound parameter should be an integer')
         if tlb < 2:
             raise ValueError('term_lower_bound parameter should be greater than 2')
         if tlb > self.term_limit:
             raise ValueError('term_lower_bound parameter must be less than or equal to term_limit parameter')
-
         self._term_lower_bound = tlb
 
     @property
@@ -179,10 +151,8 @@ class metalog():
 
     @step_len.setter
     def step_len(self, sl):
-        # raise exception for input validation
         if sl < .001 or sl > .01:
             raise ValueError('step_len must be >= to 0.001 and <= to 0.01')
-
         self._step_len = sl
 
     @property
@@ -191,24 +161,17 @@ class metalog():
 
     @probs.setter
     def probs(self, ps):
-        # raise exception for input validation
-        if type(ps) == (list or np.ndarray):
-            raise TypeError('Input probabilites must be an array')
-
         if ps != None:
-
+            if not isinstance(ps, (list, np.ndarray)):
+                raise TypeError('Input probabilites must be an array')
             if not all(isinstance(x, (int, float)) for x in ps):
                 raise TypeError('Input probabilites must be an array of integer or float data')
-
             if np.size(np.where(np.isnan(ps))) != 0:
                 raise ValueError('Input probabilites cannot contain nans')
-
             if np.max(ps) > 1 or np.min(ps) < 0:
                 raise ValueError('Input probabilites must have values between, not including, 0 and 1')
-
             if len(ps) != len(self.x):
                 raise IndexError('probs vector and x vector must be the same length')
-
         self._probs = ps
 
     @property
@@ -217,7 +180,6 @@ class metalog():
 
     @fit_method.setter
     def fit_method(self, fm):
-        # raise exception for input validation
         if fm != 'OLS' and fm != 'LP' and fm != 'any':
             raise ValueError('fit_method can only be values OLS, LP or any')
         self._fit_method = fm
@@ -254,9 +216,3 @@ class metalog():
     def __getitem__(self, arr):
         #TODO input validation that arr in output list
         return self.output_list.arr
-
-def rmetalog(m, n = 1, term = 2, generator = 'rand'):
-    return rmetalog(m, n = n, term = term, generator = generator)
-
-def plot(m):
-    return plot(m)

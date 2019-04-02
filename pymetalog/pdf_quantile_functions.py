@@ -56,6 +56,5 @@ def pdfMetalogValidation(x):
     y = np.min(x)
     if (y >= 0):
         return('yes')
-
     else:
         return('no')
