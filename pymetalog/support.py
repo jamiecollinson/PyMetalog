@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 
+
+
 def MLprobs(x_old, step_len):
     l = len(x_old)
     x = pd.DataFrame()
@@ -15,6 +17,7 @@ def MLprobs(x_old, step_len):
             else:
                 x.loc[i, 'probs'] = x.loc[i-1, 'probs'] + 1/l
 
+    #TODO method for turning off and on this n>100 estimation
     if len(x.index) > 100:
         y2 = np.linspace(step_len, 1 - step_len, ((1 - step_len) / step_len))
 
@@ -29,15 +32,21 @@ def MLprobs(x_old, step_len):
         x_new = np.quantile(x_old, y)
 
         df_x = {}
-
         df_x['x'] = x_new
-
         df_x['probs'] = y
+        x = df_x
 
-    return df_x
+    return x
 
 
 def pdfMetalog(a, y, t, bounds = [], boundedness = 'u'):
+    #print(str(y)+" smoo")
+    if y <= 0:
+        y = .00001
+
+    if y >= 1:
+        y = .99999
+
     d = y * (1 - y)
     f = y - .5
     l = np.log(y / (1 - y))
@@ -46,7 +55,7 @@ def pdfMetalog(a, y, t, bounds = [], boundedness = 'u'):
 
     # For the first three terms
     x = a[1]/d
-    if a[2] != 0:
+    if len(a) > 2 and a[2] != 0:
         x = x + a[2] * ((f / d) + l)
 
     # For the fourth term
@@ -86,15 +95,26 @@ def pdfMetalog(a, y, t, bounds = [], boundedness = 'u'):
     if boundedness == 'b':
         x = (x * (1 + np.exp(M)) ** 2) / ((bounds[1] - bounds[0]) * np.exp(M))
 
+    if x <= 0:
+        x=.00001
+    #print(str(x) + " zoop")
     return x
 
 def quantileMetalog(a, y, t, bounds = [], boundedness = 'u'):
+    if y <= 0:
+        y = .00001
+
+    if y >= 1:
+        y = .99999
     # Some values for calculation
     f = y - 0.5
     l = np.log(y / (1 - y))
 
     # For the first three terms
-    x = a[0] + a[1] * l + a[2] * f * l
+    x = a[0] + a[1] * l
+    if t > 2:
+        x = x + a[2] * f * l
+
 
     # For the fourth term
     if t > 3:
@@ -182,20 +202,32 @@ def diffMatMetalog(term_limit, step_len):
 
     return new_Diff
 
-def newtons_method_metalog(m,q,term):
+def newtons_method_metalog(m,q,term, bounds=None, boundedness=None):
   # a simple newtons method application
-  m = m.output_list
-  alpha_step = 0.01
-  err = 0.0000001
+  if bounds == None:
+      bounds = m['params']['bounds']
+  if boundedness == None:
+      boundedness = m['params']['boundedness']
+
+  # if m is metalog
+  try:
+    m = m.output_list
+    avec = 'a' + str(term)
+    a = m['A'][avec]
+  except:
+    a=m
+
+  #TODO there should be setters for at least some of these hyperparameters
+  alpha_step = 0.5
+  err = 1e-10
   temp_err = 0.1
   y_now = 0.5
-  avec = 'a'+str(term)
-  a = m['A'][avec]
+
 
   i = 1
   while(temp_err>err):
-    frist_function = (quantileMetalog(a,y_now,term,m['params']['bounds'],m['params']['boundedness'])-q)
-    derv_function = pdfMetalog(a,y_now,term,m['params']['bounds'],m['params']['boundedness'])
+    frist_function = (quantileMetalog(a,y_now,term,bounds,boundedness)-q)
+    derv_function = pdfMetalog(a,y_now,term,bounds,boundedness)
     y_next = y_now-alpha_step*(frist_function*derv_function)
     temp_err = abs((y_next-y_now))
 
