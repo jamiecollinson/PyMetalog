@@ -180,8 +180,8 @@ class metalog():
 
     @fit_method.setter
     def fit_method(self, fm):
-        if fm != 'OLS' and fm != 'LP' and fm != 'any':
-            raise ValueError('fit_method can only be values OLS, LP or any')
+        if fm != 'OLS' and fm != 'LP' and fm != 'any' and fm != 'MLE':
+            raise ValueError('fit_method can only be values OLS, LP, any, or MLE')
         self._fit_method = fm
 
 
